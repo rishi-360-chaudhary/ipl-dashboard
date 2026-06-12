@@ -3,7 +3,7 @@
 An interactive data analytics dashboard built with **Streamlit** and **Plotly** for analyzing Indian Premier League (IPL) match data from 2008 to 2022.
 
 ## 🔗 Live Demo
-[View on Streamlit Cloud →](https://your-app-url.streamlit.app)
+[View on Streamlit Cloud →](https://rishi-360-chaudhary-ipl-dashboard-app-fjgs3n.streamlit.app/)
 
 ## 📊 Features
 

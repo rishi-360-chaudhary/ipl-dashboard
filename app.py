@@ -6,7 +6,6 @@ import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 
-# ─── Page Config ────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="IPL Analytics Dashboard",
     page_icon="🏏",
@@ -14,7 +13,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ─── Custom CSS ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
     .main { background-color: #0e1117; }
@@ -37,21 +35,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ─── Load Data ───────────────────────────────────────────────────────────────
 @st.cache_data
 def load_data():
     matches = pd.read_csv("data/matches.csv")
     deliveries = pd.read_csv("data/deliveries.csv")
 
-    # Standardise column names to lowercase
     matches.columns = matches.columns.str.lower().str.strip()
     deliveries.columns = deliveries.columns.str.lower().str.strip()
 
-    # Rename 'id' → 'match_id' in matches if needed
     if 'id' in matches.columns and 'match_id' not in matches.columns:
         matches.rename(columns={'id': 'match_id'}, inplace=True)
 
-    # Clean team names
     team_rename = {
         'Delhi Daredevils': 'Delhi Capitals',
         'Deccan Chargers': 'Sunrisers Hyderabad',
@@ -69,7 +63,6 @@ try:
 except FileNotFoundError:
     data_loaded = False
 
-# ─── Header ─────────────────────────────────────────────────────────────────
 st.markdown("""
 <div style='text-align:center; padding: 10px 0 20px 0;'>
     <h1 style='color:#e94560; font-size:2.8rem; font-weight:800;'>🏏 IPL Analytics Dashboard</h1>
@@ -82,7 +75,6 @@ if not data_loaded:
     st.info("Download from: https://www.kaggle.com/datasets/ramjidoolla/ipl-data-set")
     st.stop()
 
-# ─── Sidebar Filters ────────────────────────────────────────────────────────
 st.sidebar.markdown("## 🎛️ Filters")
 all_seasons = sorted(matches['season'].unique())
 selected_seasons = st.sidebar.multiselect("Season(s)", all_seasons, default=all_seasons)
@@ -90,7 +82,6 @@ selected_seasons = st.sidebar.multiselect("Season(s)", all_seasons, default=all_
 all_teams = sorted(set(matches['team1'].dropna()) | set(matches['team2'].dropna()))
 selected_team = st.sidebar.selectbox("Focus Team", ["All Teams"] + all_teams)
 
-# Filter matches
 filtered = matches[matches['season'].isin(selected_seasons)]
 if selected_team != "All Teams":
     filtered = filtered[(filtered['team1'] == selected_team) | (filtered['team2'] == selected_team)]
@@ -98,7 +89,6 @@ if selected_team != "All Teams":
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"**{len(filtered)}** matches selected")
 
-# ─── KPI Row ────────────────────────────────────────────────────────────────
 total_matches  = len(filtered)
 total_seasons  = filtered['season'].nunique()
 total_teams    = len(all_teams)
@@ -118,16 +108,11 @@ for col, val, label in zip(
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ─── Tabs ───────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4 = st.tabs(["🏆 Team Analysis", "🏏 Batting", "🎯 Bowling", "🏟️ Venues"])
 
-# ════════════════════════════════════════════════════════════════════════════
-# TAB 1 — TEAM ANALYSIS
-# ════════════════════════════════════════════════════════════════════════════
 with tab1:
     col_a, col_b = st.columns(2)
 
-    # Most Wins Overall
     with col_a:
         st.markdown("<div class='section-header'>Most Wins (All Time)</div>", unsafe_allow_html=True)
         wins = filtered['winner'].value_counts().head(10).reset_index()
@@ -140,7 +125,6 @@ with tab1:
                           yaxis={'categoryorder': 'total ascending'})
         st.plotly_chart(fig, use_container_width=True)
 
-    # Wins per Season (stacked)
     with col_b:
         st.markdown("<div class='section-header'>Season-wise Win Distribution</div>", unsafe_allow_html=True)
         season_wins = filtered.groupby(['season', 'winner']).size().reset_index(name='wins')
@@ -155,7 +139,6 @@ with tab1:
 
     col_c, col_d = st.columns(2)
 
-    # Toss Decision Analysis
     with col_c:
         st.markdown("<div class='section-header'>Toss Decision Preference</div>", unsafe_allow_html=True)
         toss = filtered['toss_decision'].value_counts().reset_index()
@@ -166,7 +149,6 @@ with tab1:
         fig3.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig3, use_container_width=True)
 
-    # Toss win vs Match win
     with col_d:
         st.markdown("<div class='section-header'>Toss Win → Match Win Rate (%)</div>", unsafe_allow_html=True)
         toss_match = filtered.copy()
@@ -181,9 +163,6 @@ with tab1:
                            coloraxis_showscale=False, xaxis_tickangle=-30)
         st.plotly_chart(fig4, use_container_width=True)
 
-# ════════════════════════════════════════════════════════════════════════════
-# TAB 2 — BATTING
-# ════════════════════════════════════════════════════════════════════════════
 with tab2:
     match_ids = filtered['match_id'].tolist()
     bat_data = deliveries[deliveries['match_id'].isin(match_ids)].copy()
@@ -220,7 +199,6 @@ with tab2:
                            xaxis_tickangle=-30)
         st.plotly_chart(fig6, use_container_width=True)
 
-    # Run rate per over across all matches
     st.markdown("<div class='section-header'>Average Runs Per Over (Power Play vs Death Overs)</div>", unsafe_allow_html=True)
     over_runs = bat_data.groupby('over')['total_runs'].mean().reset_index()
     over_runs.columns = ['Over', 'Avg Runs']
@@ -233,9 +211,6 @@ with tab2:
     fig7.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
     st.plotly_chart(fig7, use_container_width=True)
 
-# ════════════════════════════════════════════════════════════════════════════
-# TAB 3 — BOWLING
-# ════════════════════════════════════════════════════════════════════════════
 with tab3:
     bowl_data = deliveries[deliveries['match_id'].isin(match_ids)].copy()
 
@@ -265,7 +240,6 @@ with tab3:
         fig9.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig9, use_container_width=True)
 
-    # Economy rate
     st.markdown("<div class='section-header'>Best Economy Rate (min 30 overs bowled)</div>", unsafe_allow_html=True)
     econ = bowl_data.groupby('bowler').agg(
         total_runs=('total_runs', 'sum'),
@@ -282,9 +256,6 @@ with tab3:
                         coloraxis_showscale=False, xaxis_title='Economy Rate')
     st.plotly_chart(fig10, use_container_width=True)
 
-# ════════════════════════════════════════════════════════════════════════════
-# TAB 4 — VENUES
-# ════════════════════════════════════════════════════════════════════════════
 with tab4:
     col_a, col_b = st.columns(2)
 
@@ -320,7 +291,6 @@ with tab4:
                             xaxis_tickangle=-30)
         st.plotly_chart(fig12, use_container_width=True)
 
-    # City-wise match count
     st.markdown("<div class='section-header'>Matches by City</div>", unsafe_allow_html=True)
     city_data = filtered['city'].value_counts().head(15).reset_index()
     city_data.columns = ['City', 'Matches']
@@ -330,7 +300,6 @@ with tab4:
     fig13.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
     st.plotly_chart(fig13, use_container_width=True)
 
-# ─── Footer ─────────────────────────────────────────────────────────────────
 st.markdown("---")
 st.markdown("""
 <div style='text-align:center; color:#4a5568; font-size:0.85rem; padding:10px 0'>
